@@ -3,6 +3,8 @@ const router = new express.Router()
 
 const publicKey = process.env.PUBLIC_KEY
 const privateKey = process.env.PRIVATE_KEY
+const metricKey = process.env.METRIC_KEY
+const refreshDuration = parseInt(process.env.REFRESH_DURATION) || 15
 
 const Game = require('../db/game')
 const Section = require('../db/section')
@@ -154,15 +156,19 @@ router.get('/total', async (req, res) => {
 
 // Gets the metrics for the specified game in HTML form
 /* Query parameters:
-   public_key: The public key of the API
+   metric_key: The metric key of the API
    game: The game specified (Optional, defaults to the current game)
-   use_newlines: Whether new lines would be used (Optional, defaults to false)
+   show_total: Whether the total amount will be shown (Optional, defaults to true)
 */
 router.get('/metrics', async (req, res) => {
-    if (!req.query.public_key || req.query.public_key != publicKey) {
+    if (!req.query.metric_key || req.query.metric_key != metricKey) {
         return defaultError(res)
     }
     var game = req.query.game || await getCurrentGame()
+    var show_total = true
+    if (req.query.show_total) {
+        show_total = (req.query.show_total === "true")
+    }
     if (!game) {
         return res.send('The game specified is missing.')
     }
@@ -170,7 +176,7 @@ router.get('/metrics', async (req, res) => {
     <html>
         <head>
             <meta charset="UTF-8">
-            <meta http-equiv="refresh" content="20">
+            <meta http-equiv="refresh" content="${refreshDuration}">
             <title>Death Counter for ${game}</title>
         </head>
         <body>
@@ -187,7 +193,10 @@ router.get('/metrics', async (req, res) => {
             response += `<p>${section.name}: ${section.deaths}</p>`
             total += section.deaths
         })
-        response += `<p>Total deaths: ${total}</p></body></html>`
+        if (show_total) {
+            response += `<p>Total deaths: ${total}</p>`
+        }
+        response += '</body></html>'
         return res.send(response)
     })
 })
