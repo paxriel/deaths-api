@@ -179,9 +179,9 @@ Assuming that you have a Heroku account and the Heroku CLI is already installed,
 
 | | |
 |-|-|
-| ![NightBot commands - pg 1](./images/nightbot_pg1.png) | ![NightBot commands - pg 2](./images/nightbot_pg2.png) |
+| ![NightBot commands - pg 1](./nightbot_pg1.png) | ![NightBot commands - pg 2](./nightbot_pg2.png) |
 | Nightbot commands - pg 1 | Nightbot commands - pg 2 |
-| ![The OBS Browser Source used to display the metrics](./images/obs_source.png) | |
+| ![The OBS Browser Source used to display the metrics](./obs_source.png) | |
 | The OBS Browser Source used to display the metrics| |
 
 ## Other Alternatives
