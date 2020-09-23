@@ -158,7 +158,8 @@ Query Parameters:
 2. cd to the download location in cmd or bash
 3. Run `npm install --production` if you are running on a production server or `npm install` if it is in a development environment. If you don't really understand what production and development environments are, just run `npm install`.
 4. Run `PRIVATE_KEY="YourPrivateKeyHere" PUBLIC_KEY="YourPublicKeyHere" METRIC_KEY="YourMetricKeyHere" MONGODB_URL="YourURLHere" npm start`
-5. Your server should now be up on `localhost:4001`
+5. Your server should now be up on `localhost:4001`. To stop the server, enter `Ctrl + C` on your keyboard.
+6. To change any environment variables, stop the server and repeat step 4.
 
 ### Deploying on Heroku
 
@@ -173,6 +174,7 @@ Assuming that you have a Heroku account and the Heroku CLI is already installed,
 7. Run `git remote set-url heroku https://git.heroku.com/YourNameHere.git`
 8. Run `git add .`, `git commit -m "Initial commit"` and `git push heroku master`
 9. Your app is now up on Heroku on `YourNameHere.herokuapp.com`! If you want to test your app locally, refer to the instructions for deploying locally from Step 3 onwards.
+10. To change any environment variable, run `heroku config:set YourVariableHere=YourNewValueHere` within the download location.
 
 ## Example Implementation
 
