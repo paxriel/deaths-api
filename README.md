@@ -143,12 +143,14 @@ Query Parameters:
 
 ### Environment Variables
 
-* PRIVATE_KEY: The private key to create and modify games, sections and deaths.
-* PUBLIC_KEY: The public key to read games, sections and deaths.
-* METRIC_KEY: The key to view the metrics page.
+* PRIVATE_KEY: The private key to create and modify games, sections and deaths. This key should not be leaked under **any circumstances**.
+* PUBLIC_KEY: The public key to read games, sections and deaths. This key can be provided to your viewers for them to get the number of deaths, sections and games that you have. However, doing so risks having your server being DDOSed by accident due to the large amount of requests received from the viewers. Hence, it is **not recommended** to publicize this key.
+* METRIC_KEY: The key to view the metrics page. This key can be provided to your viewers for them to view the current metrics in a browser. However, doing so risks having your server being DDOSed by accident due to the large amount of requests received from the viewers. Hence, it is **not recommended** to publicize this key.
 * MONGODB_URL: The URL to access your [MongoDB database](https://docs.atlas.mongodb.com/getting-started/).
 * PORT: The port that the server will be deployed on. (Optional, defaults to 4001)
 * REFRESH_DURATION: The duration that the metrics page refreshes. (Optional, defaults to 15)
+
+**Note: PRIVATE_KEY, PUBLIC_KEY and METRIC_KEY are basically your passwords to read or write changes to the API. If any of them is leaked, replace it *as soon as possible*!**
 
 ### Deploying Locally
 
