@@ -1,12 +1,14 @@
 # Deaths API
 
-Deaths API is a website for streamers to host to record deaths using GET requests. This allows for it to be used with bots like NightBot. This is intended to be used with one/multiple games that has sections and some sort of death functionality. It can store the deaths data of multiple games at a time in an external server. It also contains a metrics page that you can put as a Browser Source in your OBS as well. Each instance of the website is intended to run only for one streamer.
+Deaths API is a website for streamers to host to record deaths using GET requests. This allows for it to be used with bots like NightBot. This is intended to be used with one/multiple games that has sections and some sort of death functionality. It can store the deaths data of multiple games at a time in an external database. It also contains a metrics page that you can put as a Browser Source in your OBS as well. Each instance of the website is intended to run only for one streamer.
+
+[中文版本](./README.zh-cn.md)
 
 ## Possible Requests
 
 ### /getgame
 
-Description: Gets the game that is currently selected.
+**Description:** Gets the game that is currently selected.
 
 Query Parameters:
 | Parameter | Usage |
@@ -180,9 +182,9 @@ Assuming that you have a Heroku account and the Heroku CLI is already installed,
 
 | | |
 |-|-|
-| ![NightBot commands - pg 1](./nightbot_pg1.png) | ![NightBot commands - pg 2](./nightbot_pg2.png) |
+| ![NightBot commands - pg 1](./images/nightbot_pg1.png) | ![NightBot commands - pg 2](./images/nightbot_pg2.png) |
 | Nightbot commands - pg 1 | Nightbot commands - pg 2 |
-| ![The OBS Browser Source used to display the metrics](./obs_source.png) | |
+| ![The OBS Browser Source used to display the metrics](./images/obs_source.png) | |
 | The OBS Browser Source used to display the metrics| |
 
 ## Other Alternatives
