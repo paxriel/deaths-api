@@ -1,6 +1,6 @@
 # Deaths API
 
-This is an API for recording your deaths using GET requests. This allows for it to be used with bots like NightBot.
+Deaths API is a website that you can host to record your deaths using GET requests. This allows for it to be used with bots like NightBot. This is intended to be used with one/multiple games that has sections and some sort of death functionality. It can store the deaths data of multiple games at a time in an external server. It also contains a metrics page that you can put as a Browser Source in your OBS as well. Each instance of the website is intended to run only for one streamer.
 
 ## Possible Requests
 
