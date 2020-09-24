@@ -9,29 +9,7 @@ const refreshDuration = parseInt(process.env.REFRESH_DURATION) || 15
 const Game = require('../db/game')
 const Section = require('../db/section')
 
-// Default error message
-function defaultError(res) {
-    return res.send('An unexpected error occurred.')
-}
-
-// Get the current game
-async function getCurrentGame() {
-    var promise = new Promise((resolve, reject) => {
-        Game.findOne({ isCurrent: true }, (err, game) => {
-            if (err) {
-                console.log('An error occurred while finding the current game, stack trace below')
-                console.log(err.stack)
-                resolve(null)
-            } else if (!game) {
-                resolve(null)
-            } else {
-                resolve(game.name)
-            }
-        })
-    })
-    return promise
-}
-
+module.exports = function (localeObject, subValues, defaultError, getCurrentGame) {
 // Gets the current game
 /* Query parameters:
    public_key: The public key of the API
@@ -42,13 +20,13 @@ router.get('/getgame', async (req, res) => {
     }
     Game.findOne({ isCurrent: true }, (err, game) => {
         if (err) {
-            console.log('An error occurred while finding the current game, stack trace below')
+            console.log(localeObject.errorFindingGame)
             console.log(err.stack)
             return defaultError(res)
         } else if (!game) {
-            return res.send('No game has been set as the current game.')
+            return res.send(localeObject.noGameSet)
         } else {
-            return res.send('Current game on death counter: ' + game.name)
+            return res.send(subValues(localeObject.currentGameSet, { game: game.name }))
         }
     })
 })
@@ -62,12 +40,12 @@ router.get('/setgame', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
         return defaultError(res)
     } else if (!req.query.game) {
-        return res.send('No game is specified in the query.')
+        return res.send(localeObject.noGameInQuery)
     }
 
     Game.findOne({ name: req.query.game }, async (e1, game) => {
         if (e1) {
-            console.log('An error occurred while finding a duplicate game, stack trace below')
+            console.log(subValues(localeObject.errorFindingDuplicateGame, { game: req.query.game }))
             console.log(e1.stack)
             return defaultError(res)
         }
@@ -92,9 +70,9 @@ router.get('/setgame', async (req, res) => {
                 game.isCurrent = true
                 await game.save()
             }
-            return res.send('The current game has been set to ' + req.query.game + '.')
+            return res.send(subValues(localeObject.currentGameSet, { game: req.query.game }))
         } catch (e3) {
-            console.log('An error occurred while setting the current game, stack trace below')
+            console.log(subValues(localeObject.errorSettingCurrentGame, { game: req.query.game }))
             console.log(e3.stack)
             return defaultError(res)
         }
@@ -112,15 +90,15 @@ router.get('/deletegame', async (req, res) => {
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('There is no game currently specified.')
+        return res.send(localeObject.noGameSpecified)
     }
     Section.deleteMany({ parent: game }, (err) => {
         if (err) {
-            console.log('An error occurred while deleting sections from a game, stack trace below')
+            console.log(subValues(localeObject.errorDeletingGameSections, { game }))
             console.log(err.stack)
             return defaultError(res)
         } else {
-            return res.send('All sections from ' + game + ' have been deleted.')
+            return res.send(subValues(localeObject.gameSectionsDeleted, { game }))
         }
     })
 })
@@ -136,13 +114,13 @@ router.get('/total', async (req, res) => {
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('The game specified is missing.')
+        return res.send(localeObject.noGameSpecified)
     }
 
     var total = 0
     Section.find({ parent: game }, null, { sort: { created_at: 'asc' } }, (err, sectionList) => {
         if (err) {
-            console.log('An error occurred while getting the section list, stack trace below')
+            console.log(subValues(localeObject.errorGettingSectionList, { game }))
             console.log(err.stack)
             return defaultError(res)
         }
@@ -150,7 +128,7 @@ router.get('/total', async (req, res) => {
         sectionList.forEach((section) => {
             total += section.deaths
         })
-        return res.send('Total deaths for ' + game + ': ' + total)
+        return res.send(subValues(localeObject.totalDeaths, { game, deaths: total }))
     })
 })
 
@@ -170,35 +148,39 @@ router.get('/metrics', async (req, res) => {
         show_total = (req.query.show_total === "true")
     }
     if (!game) {
-        return res.send('The game specified is missing.')
+        return res.send(localeObject.noGameSpecified)
     }
     var response = `<!DOCTYPE html>
     <html>
         <head>
             <meta charset="UTF-8">
             <meta http-equiv="refresh" content="${refreshDuration}">
-            <title>Death Counter for ${game}</title>
+            <title>${subValues(localeObject.metricsTitle, { game })}</title>
         </head>
         <body>
-            <h3>Death counter for ${game}</h3>`
+            <h3>${subValues(localeObject.metricsTitle, { game })}</h3>`
     var total = 0
     Section.find({ parent: game }, null, { sort: { created_at: 'asc' } }, (err, sectionList) => {
         if (err) {
-            console.log('An error occurred while getting the section list, stack trace below')
+            console.log(subValues(localeObject.errorGettingSectionList, { game }))
             console.log(err.stack)
             return defaultError(res)
         }
 
         sectionList.forEach((section) => {
-            response += `<p>${section.name}: ${section.deaths}</p>`
+            console.log(section)
+            console.log(section.name)
+            console.log(section.deaths)
+            response += `<p>${subValues(localeObject.metricsSection, { game, section: section.name, deaths: section.deaths })}</p>`
             total += section.deaths
         })
         if (show_total) {
-            response += `<p>Total deaths: ${total}</p>`
+            response += `<p>${subValues(localeObject.metricsTotalDeaths, { game: game, deaths: total })}</p>`
         }
         response += '</body></html>'
         return res.send(response)
     })
 })
 
-module.exports = router
+return router
+}
