@@ -4,32 +4,9 @@ const router = new express.Router()
 const publicKey = process.env.PUBLIC_KEY
 const privateKey = process.env.PRIVATE_KEY
 
-const Game = require('../db/game')
 const Section = require('../db/section')
 
-// Default error message
-function defaultError(res) {
-    return res.send('An unexpected error occurred.')
-}
-
-// Get the current game
-async function getCurrentGame() {
-    var promise = new Promise((resolve, reject) => {
-        Game.findOne({ isCurrent: true }, (err, game) => {
-            if (err) {
-                console.log('An error occurred while finding the current game, stack trace below')
-                console.log(err.stack)
-                resolve(null)
-            } else if (!game) {
-                resolve(null)
-            } else {
-                resolve(game.name)
-            }
-        })
-    })
-    return promise
-}
-
+module.exports = module.exports = function (localeObject, subValues, defaultError, getCurrentGame) {
 // Adds a death to the specified section of the game
 /* Query parameters:
    private_key: The private key of the API
@@ -40,27 +17,27 @@ router.get('/adddeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
         return defaultError(res)
     } else if (!req.query.section) {
-        return res.send('There is no section specified.')
+        return res.send(localeObject.noSectionSpecified)
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('There is no game currently specified.')
+        return res.send(localeObject.noGameSpecified)
     }
     Section.findOne({ name: req.query.section, parent: game }, async (err, section) => {
         if (err) {
-            console.log('An error occurred while finding the specified section, stack trace below')
+            console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
             console.log(err.stack)
             return defaultError(res)
         } else if (!section) {
-            return res.send('The section specified could not be found.')
+            return res.send(subValues(localeObject.missingSection, { game, section: req.query.section }))
         }
 
         section.deaths += 1
         try {
             await section.save()
-            return res.send('The death count for ' + req.query.section + ' is now ' + section.deaths)
+            return res.send(subValues(localeObject.sectionDeathChange, { game, section: req.query.section, deaths: section.deaths }))
         } catch (e) {
-            console.log('An error occurred while adding a death, stack trace below')
+            console.log(subValues(localeObject.errorAddingDeath, { game, section: req.query.section, deaths: section.deaths }))
             console.log(err.stack)
             return defaultError(res)
         }
@@ -77,28 +54,28 @@ router.get('/removedeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
         return defaultError(res)
     } else if (!req.query.section) {
-        return res.send('There is no section specified.')
+        return res.send(localeObject.noSectionSpecified)
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('There is no game currently specified.')
+        return res.send(localeObject.noGameSpecified)
     }
     Section.findOne({ name: req.query.section, parent: game }, async (err, section) => {
         if (err) {
-            console.log('An error occurred while finding the specified section, stack trace below')
+            console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
             console.log(err.stack)
             return defaultError(res)
         } else if (!section) {
-            return res.send('The section specified could not be found.')
+            return res.send(subValues(localeObject.missingSection, { game, section: req.query.section }))
         }
 
         section.deaths -= 1
         if (section.deaths < 0) section.deaths = 0
         try {
             await section.save()
-            return res.send('The death count for ' + req.query.section + ' is now ' + section.deaths)
+            return res.send(subValues(localeObject.sectionDeathChange, { game, section: req.query.section, deaths: section.deaths }))
         } catch (e) {
-            console.log('An error occurred while adding a death, stack trace below')
+            console.log(subValues(localeObject.errorRemovingDeath, { game, section: req.query.section, deaths: section.deaths }))
             console.log(err.stack)
             return defaultError(res)
         }
@@ -115,21 +92,21 @@ router.get('/getdeath', async (req, res) => {
     if (!req.query.public_key || req.query.public_key !== publicKey) {
         return defaultError(res)
     } else if (!req.query.section) {
-        return res.send('There is no section specified.')
+        return res.send(localeObject.noSectionSpecified)
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('There is no game currently specified.')
+        return res.send(localeObject.noGameSpecified)
     }
     Section.findOne({ name: req.query.section, parent: game }, (err, section) => {
         if (err) {
-            console.log('An error occurred while finding the specified section, stack trace below')
+            console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
             console.log(err.stack)
             return defaultError(res)
         } else if (!section) {
-            return res.send('The section specified could not be found.')
+            return res.send(subValues(localeObject.missingSection, { game, section: req.query.section }))
         }
-        return res.send('The death count for ' + req.query.section + ' is ' + section.deaths + '.')
+        return res.send(subValues(localeObject.sectionDeathGet, { game, section: req.query.section, deaths: section.deaths }))
     })
 })
 
@@ -144,39 +121,40 @@ router.get('/setdeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
         return defaultError(res)
     } else if (!req.query.content) {
-        return res.send('There is no content specified.')
+        return res.send(localeObject.noContentSpecified)
     }
     var splitContent = req.query.content.split(' ')
     var count = splitContent[splitContent.length - 1]
-    var section = req.query.content.slice(0, 0 - count.length)
-    if (section.length === 0) {
-        return res.send('There is no section specified')
+    var sectionQuery = req.query.content.slice(0, 0 - count.length)
+    if (sectionQuery.length === 0) {
+        return res.send(localeObject.noSectionSpecified)
     } else if (isNaN(parseInt(count))) {
-        return res.send('The count is not an integer.')
+        return res.send(localeObject.countNotInteger)
     }
     var game = req.query.game || await getCurrentGame()
     if (!game) {
-        return res.send('There is no game currently specified.')
+        return res.send(localeObject.noGameSpecified)
     }
-    Section.findOne({ name: section, parent: game }, async (err, section) => {
+    Section.findOne({ name: sectionQuery, parent: game }, async (err, section) => {
         if (err) {
-            console.log('An error occurred while finding the specified section, stack trace below')
+            console.log(subValues(localeObject.errorFindingSection, { game, section: sectionQuery }))
             console.log(err.stack)
             return defaultError(res)
         } else if (!section) {
-            return res.send('The section specified could not be found.')
+            return res.send(subValues(localeObject.missingSection, { game, section: sectionQuery }))
         }
 
         section.deaths = count
         try {
             await section.save()
-            return res.send('The death count for ' + section + ' is ' + count + '.')
+            return res.send(subValues(localeObject.sectionDeathChange, { game, section: sectionQuery, deaths: count }))
         } catch (e) {
-            console.log('An error occurred while adding a death, stack trace below')
+            console.log(subValues(localeObject.errorSettingDeath, { game, section: sectionQuery, deaths: count }))
             console.log(err.stack)
             return defaultError(res)
         }
     })
 })
 
-module.exports = router
+return router
+}
