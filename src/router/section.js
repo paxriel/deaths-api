@@ -1,15 +1,49 @@
+// Author: Paxriel (https://twitch.tv/paxriel)
 const express = require('express')
-const router = new express.Router()
+const fs = require('fs')
+var localeObject = checkLocale()
 
-const publicKey = process.env.PUBLIC_KEY
-const privateKey = process.env.PRIVATE_KEY
+const Game = require('./db/game')
 
-const Game = require('../db/game')
-const Section = require('../db/section')
+// Checks whether the locale specified exists
+function checkLocale() {
+    const localeSpecified = process.env.LOCALE || 'en-gb'
+    try {
+        const currentObject = fs.readFileSync(`./locales/${localeSpecified}.json`)
+        return JSON.parse(currentObject)
+    } catch (e) {
+        // No translation is available for this line as well, this error would imply that the locales file could not be loaded
+        console.log(`Locale ${localeSpecified} missing or could not be opened, stack trace below`)
+        console.log(e.stack)
+        process.exit(20)
+    }
+}
+
+// Check whether all the specified keys exists
+function checkKeys() {
+    if (!process.env.PRIVATE_KEY) {
+        console.log(localeObject.privateKeyMissing)
+        process.exit(21)
+    } else if (!process.env.PUBLIC_KEY) {
+        console.log(localeObject.publicKeyMissing)
+        process.exit(21)
+    } else if (!process.env.METRIC_KEY) {
+        console.log(localeObject.metricKeyMissing)
+        process.exit(21)
+    }
+}
+
+// Substitute a specific string with the given arguments into a different language
+function subValues(original, valuesObject={}) {
+    if (!original) {
+        return ""
+    }
+    return original.replace(/\${game}/g, valuesObject.game).replace(/\${section}/g, valuesObject.section).replace(/\${deaths}/g, valuesObject.deaths)
+}
 
 // Default error message
 function defaultError(res) {
-    return res.send('An unexpected error occurred.')
+    return res.send(localeObject.unexpectedError)
 }
 
 // Get the current game
@@ -17,7 +51,7 @@ async function getCurrentGame() {
     var promise = new Promise((resolve, reject) => {
         Game.findOne({ isCurrent: true }, (err, game) => {
             if (err) {
-                console.log('An error occurred while finding the current game, stack trace below')
+                console.log(localeObject.errorFindingGame)
                 console.log(err.stack)
                 resolve(null)
             } else if (!game) {
@@ -30,105 +64,28 @@ async function getCurrentGame() {
     return promise
 }
 
-// Gets the total amount of sections in the game (Without deaths)
-/* Query parameters:
-   public_key: The public key of the API
-   game: The game for the total amount of sections (Optional, defaults to the current game)
-*/
-router.get('/getsection', async (req, res) => {
-    if (!req.query.public_key || req.query.public_key !== publicKey) {
-        return defaultError(res)
-    }
-    var game = req.query.game || await getCurrentGame()
-    if (!game) {
-        return res.send('There is no game currently specified.')
-    }
-    var responseString = 'The sections in ' + game + ' are '
-    Section.find({ parent: game }, null, { sort: { created_at: 'asc' } }, (err, sectionList) => {
-        if (err) {
-            console.log('An error occurred while getting the section list, stack trace below')
-            console.log(err.stack)
-            return defaultError(res)
-        }
+checkKeys()
+require('./db/mongoose')(localeObject)
+const gameRouter = require('./router/game')(localeObject, subValues, defaultError, getCurrentGame)
+const sectionRouter = require('./router/section')(localeObject, subValues, defaultError, getCurrentGame)
+const deathsRouter = require('./router/deaths')(localeObject, subValues, defaultError, getCurrentGame)
 
-        sectionList.forEach((section) => {
-            responseString += (section.name + ', ')
-        })
-        if (sectionList.length === 0 ) {
-            return res.send(responseString)
-        } else {
-            // Remove the last ', ' at the end
-            return res.send(responseString.slice(0, -2))
-        }
-    })
+const port = process.env.PORT || 4001
+const app = express()
+
+// No robots
+app.get('/robots.txt', async (req, res) => {
+    return res.send('User-agent: \*\nDisallow: /')
 })
 
-// Adds a section to the game
-/* Query parameters:
-   private_key: The private key of the API
-   game: The game for the total amount of sections (Optional, defaults to the current game)
-   name: The name of the section that would be added
-*/
-router.get('/addsection', async (req, res) => {
-    if (!req.query.private_key || req.query.private_key !== privateKey) {
-        return defaultError(res)
-    } else if (!req.query.name) {
-        return res.send('no name specified')
-    }
+app.use(gameRouter)
+app.use(sectionRouter)
+app.use(deathsRouter)
 
-    var game = req.query.game || await getCurrentGame()
-    if (!game) {
-        return res.send('There is no game currently specified.')
-    }
-    Section.findOne({ name: req.query.name, parent: game }, async (err, section) => {
-        if (err) {
-            console.log('An error occurred while checking for duplicate sections, stack trace below')
-            console.log(err.stack)
-            return defaultError(res)
-        } else if (section) {
-            return res.send('The specified section already exists.')
-        }
-
-        var newSection = new Section({
-            name: req.query.name,
-            parent: game
-        })
-        try {
-            await newSection.save()
-            return res.send('Section ' + req.query.name + ' added to ' + game + '.')
-        } catch (e) {
-            console.log('An error occurred while saving a new section, stack trace below')
-            console.log(e.stack)
-            return defaultError(res)
-        }
-    })
+app.get('*', (req, res) => {
+    return res.send('Server is running')
 })
 
-// Removes a section from the game
-/* Query parameters:
-   private_key: The private key of the API
-   game: The game for the total amount of sections (Optional, defaults to the current game)
-   name: The name of the section that would be added
-*/
-router.get('/removesection', async (req, res) => {
-    if (!req.query.private_key || req.query.private_key !== privateKey) {
-        return defaultError(res)
-    } else if (!req.query.name) {
-        return res.send('No name is specified')
-    }
-    var game = req.query.game || await getCurrentGame()
-    if (!game) {
-        return res.send('There is no game currently specified.')
-    }
-    Section.deleteOne({ name: req.query.name, parent: game }, (err) => {
-        if (err) {
-            console.log('An error occurred while deleting a section, stack trace below')
-            console.log(err.stack)
-            return defaultError(res)
-        } else {
-            return res.send('Section ' + req.query.name + ' from ' + game + ' is deleted.')
-        }
-    })
+app.listen(port, () => {
+    console.log('Server is up on port ' + port)
 })
-
-module.exports = router
