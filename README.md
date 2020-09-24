@@ -2,8 +2,6 @@
 
 Deaths API is a website for streamers to host to record deaths using GET requests. This allows for it to be used with bots like NightBot. This is intended to be used with one/multiple games that has sections and some sort of death functionality. It can store the deaths data of multiple games at a time in an external database. It also contains a metrics page that you can put as a Browser Source in your OBS as well. Each instance of the website is intended to run only for one streamer.
 
-[中文版本](./README.zh-cn.md)
-
 ## Possible Requests
 
 ### /getgame
@@ -151,32 +149,60 @@ Query Parameters:
 * MONGODB_URL: The URL to access your [MongoDB database](https://docs.atlas.mongodb.com/getting-started/).
 * PORT: The port that the server will be deployed on. (Optional, defaults to 4001)
 * REFRESH_DURATION: The duration that the metrics page refreshes. (Optional, defaults to 15)
+* LOCALE: The language file used for the messages. (Optional, defaults to en-gb)
 
 **Note: PRIVATE_KEY, PUBLIC_KEY and METRIC_KEY are basically your passwords to read or write changes to the API. If any of them is leaked, replace it *as soon as possible*!**
 
 ### Deploying Locally
 
-1. Download the [current repository](https://github.com/paxriel/deaths-api/archive/master.zip)
+1. Download the [current repository](https://github.com/paxriel/deaths-api/archive/master.zip). If you wish to use a different locale, add your own locales through the Locales section below before moving on to the next step.
 2. cd to the download location in cmd or bash
 3. Run `npm install --production` if you are running on a production server or `npm install` if it is in a development environment. If you don't really understand what production and development environments are, just run `npm install`.
-4. Run `PRIVATE_KEY="YourPrivateKeyHere" PUBLIC_KEY="YourPublicKeyHere" METRIC_KEY="YourMetricKeyHere" MONGODB_URL="YourURLHere" npm start`
+4. Run `PRIVATE_KEY="YourPrivateKeyHere" PUBLIC_KEY="YourPublicKeyHere" METRIC_KEY="YourMetricKeyHere" MONGODB_URL="YourURLHere" npm start`. If you wish to change your locale, run `LOCALE=YourLocaleHere PRIVATE_KEY="YourPrivateKeyHere" PUBLIC_KEY="YourPublicKeyHere" METRIC_KEY="YourMetricKeyHere" MONGODB_URL="YourURLHere" npm start`.
 5. Your server should now be up on `localhost:4001`. To stop the server, enter `Ctrl + C` on your keyboard.
-6. To change any environment variables, stop the server and repeat step 4.
+6. To change any environment variables, stop the server and repeat step 4 with your environment variable added to the front, such as `YourVariableHere=YourNewValueHere PRIVATE_KEY="YourPrivateKeyHere" PUBLIC_KEY="YourPublicKeyHere" METRIC_KEY="YourMetricKeyHere" MONGODB_URL="YourURLHere" npm start`.
 
 ### Deploying on Heroku
 
 Assuming that you have a Heroku account and the Heroku CLI is already installed,
 
-1. Download the [current repository](https://github.com/paxriel/deaths-api/archive/master.zip)
+1. Download the [current repository](https://github.com/paxriel/deaths-api/archive/master.zip). If you wish to use a different locale, add your own locales through the Locales section below before moving on to the next step.
 2. cd to the download location in cmd or bash
 3. Run `npm install --production` if you are running on a production server or `npm install` if it is in a development environment. If you don't really understand what production and development environments are, just run `npm install`.
 4. Run `heroku create YourNameHere`.
 5. Run `heroku config:set PRIVATE_KEY="YourPrivateKeyHere"`, `heroku config:set PUBLIC_KEY="YourPublicKeyHere"`, `heroku config:set METRIC_KEY="YourMetricKeyHere"` and `heroku config:set MONGODB_URL="YourURLHere"`
-6. Run `git init`
-7. Run `git remote set-url heroku https://git.heroku.com/YourNameHere.git`
-8. Run `git add .`, `git commit -m "Initial commit"` and `git push heroku master`
-9. Your app is now up on Heroku on `YourNameHere.herokuapp.com`! If you want to test your app locally, refer to the instructions for deploying locally from Step 3 onwards.
-10. To change any environment variable, run `heroku config:set YourVariableHere=YourNewValueHere` within the download location.
+6. If you have a different locale in mind, run `heroku config:set LOCALE=YourLocaleHere`
+7. Run `git init`
+8. Run `git remote set-url heroku https://git.heroku.com/YourNameHere.git`
+9. Run `git add .`, `git commit -m "Initial commit"` and `git push heroku master`
+10. Your app is now up on Heroku on `YourNameHere.herokuapp.com`! If you want to test your app locally, refer to the instructions for deploying locally from Step 3 onwards.
+11. To change any environment variable, run `heroku config:set YourVariableHere=YourNewValueHere` within the download location.
+
+## Locales
+
+### How It Works
+
+The files for locales are stored in JSON format in the `locales` folder. Each locale would have its own JSON file, which contains a single object. Each attribute in the object would be a string corresponding to the message of that attribute in its specific locale. As of now, only one locale (en-gb) is included, but it is possible to create your own locale.
+
+### Locale Selection
+
+The selection for the locale is done using the environment variable `LOCALE`. If you are not sure how to change environment variables, they are mentioned in the deployment sections.
+
+### Create Your Own Locale
+
+To create your own locale, you can create the corresponding `YourLocaleHere.json` file in the `locales` folder. The JSON object in the file should contain attributes that match the value in the file. The [en-gb.json](./locales/en-gb.json) file could be used as a reference for all the possible attributes that are available in the file. Once done, just set the `LOCALE` environment variable to your file name, and your locale would be used. If you are not sure how to change environment variables, they are mentioned in the deployment sections.
+
+### Templates
+
+Certain attributes in Locale strings can contain templates which would be replaced by a specific variable within the website. For instance, if a string contains `${game}`, it will be automatically replaced by the game specified. The current list of templates are follows:
+
+| Template | Variable |
+|-|-|
+| ${game} | The game specified |
+| ${section} | The section specified |
+| ${deaths} | The amount of deaths for that section, or the total deaths in a game |
+
+The availibility of the templates for each attribute can be found in the [.values.json](./locales/.values.json) file in the `locales` directory. For instance, if an attribubte in the JSON file contains `${game}, ${deaths}`, it means that those two template strings will be recognized and replaced.
 
 ## Example Implementation
 
