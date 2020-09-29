@@ -7,11 +7,40 @@ const privateKey = process.env.PRIVATE_KEY
 const Section = require('../db/section')
 
 module.exports = module.exports = function (localeObject, subValues, defaultError, getCurrentGame) {
+// Gets the total number of deaths of a specified section of the game
+/* Query parameters:
+   public_key: The public key of the API
+   game: The game specified (Optional, defaults to the current game)
+   section: The name of the section (Alias can be used)
+*/
+router.get('/getdeath', async (req, res) => {
+    if (!req.query.public_key || req.query.public_key !== publicKey) {
+        return defaultError(res)
+    } else if (!req.query.section) {
+        return res.send(localeObject.noSectionSpecified)
+    }
+    var game = req.query.game || await getCurrentGame()
+    if (!game) {
+        return res.send(localeObject.noGameSpecified)
+    }
+    Section.findOne({ $or: [{ name: req.query.section, parent: game }, { 'aliasList.alias': req.query.section, parent: game }] }, (err, section) => {
+        if (err) {
+            console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
+            console.log(err.stack)
+            return defaultError(res)
+        } else if (!section) {
+            return res.send(subValues(localeObject.missingSection, { game, section: req.query.section }))
+        }
+        return res.send(subValues(localeObject.sectionDeathGet, { game, section: req.query.section, deaths: section.deaths }))
+    })
+})
+
+
 // Adds a death to the specified section of the game
 /* Query parameters:
    private_key: The private key of the API
    game: The game specified (Optional, defaults to the current game)
-   section: The name of the section
+   section: The name of the section (Alias can be used)
 */
 router.get('/adddeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
@@ -23,7 +52,7 @@ router.get('/adddeath', async (req, res) => {
     if (!game) {
         return res.send(localeObject.noGameSpecified)
     }
-    Section.findOne({ name: req.query.section, parent: game }, async (err, section) => {
+    Section.findOne({ $or: [{ name: req.query.section, parent: game }, { 'aliasList.alias': req.query.section, parent: game }] }, async (err, section) => {
         if (err) {
             console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
             console.log(err.stack)
@@ -48,7 +77,7 @@ router.get('/adddeath', async (req, res) => {
 /* Query parameters:
    private_key: The private key of the API
    game: The game specified (Optional, defaults to the current game)
-   section: The name of the section
+   section: The name of the section (Alias can be used)
 */
 router.get('/removedeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
@@ -60,7 +89,7 @@ router.get('/removedeath', async (req, res) => {
     if (!game) {
         return res.send(localeObject.noGameSpecified)
     }
-    Section.findOne({ name: req.query.section, parent: game }, async (err, section) => {
+    Section.findOne({ $or: [{ name: req.query.section, parent: game }, { 'aliasList.alias': req.query.section, parent: game }] }, async (err, section) => {
         if (err) {
             console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
             console.log(err.stack)
@@ -82,40 +111,13 @@ router.get('/removedeath', async (req, res) => {
     })
 })
 
-// Gets the total number of deaths of a specified section of the game
-/* Query parameters:
-   public_key: The public key of the API
-   game: The game specified (Optional, defaults to the current game)
-   section: The name of the section
-*/
-router.get('/getdeath', async (req, res) => {
-    if (!req.query.public_key || req.query.public_key !== publicKey) {
-        return defaultError(res)
-    } else if (!req.query.section) {
-        return res.send(localeObject.noSectionSpecified)
-    }
-    var game = req.query.game || await getCurrentGame()
-    if (!game) {
-        return res.send(localeObject.noGameSpecified)
-    }
-    Section.findOne({ name: req.query.section, parent: game }, (err, section) => {
-        if (err) {
-            console.log(subValues(localeObject.errorFindingSection, { game, section: req.query.section }))
-            console.log(err.stack)
-            return defaultError(res)
-        } else if (!section) {
-            return res.send(subValues(localeObject.missingSection, { game, section: req.query.section }))
-        }
-        return res.send(subValues(localeObject.sectionDeathGet, { game, section: req.query.section, deaths: section.deaths }))
-    })
-})
-
 // Sets the death count of a specified section to a specific amount
 /* Query parameters:
    private_key: The private key of the API
    game: The game specified (Optional, defaults to the current game)
    content: The section followed by the death count, separated by a space bar.
-            eg. 'Forgotten Crossroads 122'
+            eg. 'Forgotten Crossroads 122'.
+            An alias for the section can be read.
 */
 router.get('/setdeath', async (req, res) => {
     if (!req.query.private_key || req.query.private_key !== privateKey) {
@@ -124,7 +126,7 @@ router.get('/setdeath', async (req, res) => {
         return res.send(localeObject.noContentSpecified)
     }
     var splitContent = req.query.content.split(' ')
-    var count = splitContent[splitContent.length - 1]
+    var count = splitContent[splitContent.length - 1] || '' // Out of bounds will produce null
     var sectionQuery = req.query.content.slice(0, 0 - count.length)
     if (sectionQuery.length === 0) {
         return res.send(localeObject.noSectionSpecified)
@@ -135,7 +137,7 @@ router.get('/setdeath', async (req, res) => {
     if (!game) {
         return res.send(localeObject.noGameSpecified)
     }
-    Section.findOne({ name: sectionQuery, parent: game }, async (err, section) => {
+    Section.findOne({ $or: [{ name: sectionQuery, parent: game }, { 'aliasList.alias': sectionQuery, parent: game }] }, async (err, section) => {
         if (err) {
             console.log(subValues(localeObject.errorFindingSection, { game, section: sectionQuery }))
             console.log(err.stack)

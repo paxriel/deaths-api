@@ -12,7 +12,7 @@ function checkLocale() {
         const currentObject = fs.readFileSync(`./locales/${localeSpecified}.json`)
         return JSON.parse(currentObject)
     } catch (e) {
-        // No translation is available for this line as well, this error would imply that the locales file could not be loaded
+        // No translation is available for this line as the locales file could not be found, so there could not be any 
         console.log(`Locale ${localeSpecified} missing or could not be opened, stack trace below`)
         console.log(e.stack)
         process.exit(20)
@@ -34,11 +34,9 @@ function checkKeys() {
 }
 
 // Substitute a specific string with the given arguments into a different language
-function subValues(original, valuesObject={}) {
-    if (!original) {
-        return ""
-    }
-    return original.replace(/\${game}/g, valuesObject.game).replace(/\${section}/g, valuesObject.section).replace(/\${deaths}/g, valuesObject.deaths)
+function subValues(original='', valuesObject={}) {
+    return original.replace(/\${game}/g, valuesObject.game).replace(/\${section}/g, valuesObject.section)
+    .replace(/\${deaths}/g, valuesObject.deaths).replace(/\${pb}/g, valuesObject.pb).replace(/\${alias}/g, valuesObject.alias)
 }
 
 // Default error message
@@ -83,9 +81,10 @@ app.use(sectionRouter)
 app.use(deathsRouter)
 
 app.get('*', (req, res) => {
-    return res.send('Server is running')
+    return res.send(localeObject.serverRunning)
 })
 
 app.listen(port, () => {
-    console.log('Server is up on port ' + port)
+    const startString = localeObject.serverStarted || ''
+    console.log(startString.replace(/\${port}/g, port))
 })

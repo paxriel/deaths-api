@@ -10,6 +10,7 @@ const Game = require('../db/game')
 const Section = require('../db/section')
 
 module.exports = function (localeObject, subValues, defaultError, getCurrentGame) {
+
 // Gets the current game
 /* Query parameters:
    public_key: The public key of the API
@@ -103,6 +104,101 @@ router.get('/deletegame', async (req, res) => {
     })
 })
 
+// Gets the PB of the specific game
+/* Query parameters:
+   public_key: The public key of the API
+   game: The game that the PB is requested from (Optional, defaults to the current game)
+*/
+router.get('/getpb', async (req, res) => {
+    if (!req.query.public_key || req.query.public_key != publicKey) {
+        return defaultError(res)
+    }
+    var game = req.query.game || await getCurrentGame()
+    if (!game) {
+        return res.send(localeObject.noGameSpecified)
+    }
+    Game.findOne({ name: game }, async (e1, gameObject) => {
+        if (e1) {
+            console.log(subValues(localeObject.errorFindingGame, { game }))
+            console.log(e1.stack)
+            return defaultError(res)
+        } else if (!game) {
+            return res.send(subValues(localeObject.missingGame, { game }))
+        }
+
+        return res.send(subValues(localeObject.personalBestGet, { game, pb: gameObject.personalBest }))
+    })
+})
+
+// Sets the PB of the specific game
+/* Query parameters:
+   private_key: The private key of the API
+   game: The game that the PB is will be set (Optional, defaults to the current game)
+   pb: The PB value that will be set for the game.
+*/
+router.get('/setpb', async (req, res) => {
+    if (!req.query.private_key || req.query.private_key != privateKey) {
+        return defaultError(res)
+    }
+    var game = req.query.game || await getCurrentGame()
+    if (!game) {
+        return res.send(localeObject.noGameSpecified)
+    } else if (!req.query.pb) {
+        return res.send(subValues(localeObject.noPBSpecified, { game }))
+    }
+    Game.findOne({ name: game }, async (e1, gameObject) => {
+        if (e1) {
+            console.log(subValues(localeObject.errorFindingGame, { game }))
+            console.log(e1.stack)
+            return defaultError(res)
+        } else if (!game) {
+            return res.send(subValues(localeObject.missingGame, { game }))
+        }
+
+        gameObject.personalBest = req.query.pb
+        try {
+            await gameObject.save()
+            return res.send(subValues(localeObject.personalBestSet, { game, pb: gameObject.personalBest }))
+        } catch (e2) {
+            console.log(subValues(localeObject.errorSettingPB, { game }))
+            return defaultError(res)
+        }
+    })
+})
+
+// Removes the PB of the specific game
+/* Query parameters:
+   private_key: The private key of the API
+   game: The game that the PB will be removed (Optional, defaults to the current game)
+*/
+router.get('/deletepb', async (req, res) => {
+    if (!req.query.private_key || req.query.private_key != privateKey) {
+        return defaultError(res)
+    }
+    var game = req.query.game || await getCurrentGame()
+    if (!game) {
+        return res.send(localeObject.noGameSpecified)
+    }
+    Game.findOne({ name: game }, async (e1, gameObject) => {
+        if (e1) {
+            console.log(subValues(localeObject.errorFindingGame, { game }))
+            console.log(e1.stack)
+            return defaultError(res)
+        } else if (!gameObject) {
+            return res.send(subValues(localeObject.missingGame, { game }))
+        }
+
+        gameObject.personalBest = ""
+        try {
+            await gameObject.save()
+            return res.send(subValues(localeObject.personalBestDelete, { game }))
+        } catch (e2) {
+            console.log(subValues(localeObject.errorDeletingPB, { game }))
+            return defaultError(res)
+        }
+    })
+})
+
 // Gets the total amount of deaths in the specified game
 /* Query parameters:
    public_key: The public key of the API
@@ -137,15 +233,19 @@ router.get('/total', async (req, res) => {
    metric_key: The metric key of the API
    game: The game specified (Optional, defaults to the current game)
    show_total: Whether the total amount will be shown (Optional, defaults to true)
+   show_pb: Whether the personal best will be shown (Optional, defaults to true)
 */
 router.get('/metrics', async (req, res) => {
     if (!req.query.metric_key || req.query.metric_key != metricKey) {
         return defaultError(res)
     }
     var game = req.query.game || await getCurrentGame()
-    var show_total = true
+    var show_total = true, show_pb = true
     if (req.query.show_total) {
         show_total = (req.query.show_total === "true")
+    }
+    if (req.query.show_pb) {
+        show_pb = (req.query.show_pb === "true")
     }
     if (!game) {
         return res.send(localeObject.noGameSpecified)
@@ -158,7 +258,7 @@ router.get('/metrics', async (req, res) => {
             <title>${subValues(localeObject.metricsTitle, { game })}</title>
         </head>
         <body>
-            <h3>${subValues(localeObject.metricsTitle, { game })}</h3>`
+            <h3 class="title">${subValues(localeObject.metricsTitle, { game })}</h3>`
     var total = 0
     Section.find({ parent: game }, null, { sort: { created_at: 'asc' } }, (err, sectionList) => {
         if (err) {
@@ -168,17 +268,30 @@ router.get('/metrics', async (req, res) => {
         }
 
         sectionList.forEach((section) => {
-            console.log(section)
-            console.log(section.name)
-            console.log(section.deaths)
-            response += `<p>${subValues(localeObject.metricsSection, { game, section: section.name, deaths: section.deaths })}</p>`
+            response += `<p class="section">${subValues(localeObject.metricsSection, { game, section: section.name, deaths: section.deaths })}</p>`
             total += section.deaths
         })
         if (show_total) {
-            response += `<p>${subValues(localeObject.metricsTotalDeaths, { game: game, deaths: total })}</p>`
+            response += `<p class="total">${subValues(localeObject.metricsTotalDeaths, { game: game, deaths: total })}</p>`
         }
-        response += '</body></html>'
-        return res.send(response)
+        // Show the PB if needed, but always perform the search
+        Game.findOne({ name: game }, (err, gameObject) => {
+            if (err) {
+                console.log(subValues(localeObject.errorFindingGame, { game }))
+                console.log(err.stack)
+                return defaultError(res)
+            } else if (!gameObject) {
+                console.log(subValues(localeObject.missingGame, { game }))
+                return defaultError(res)
+            }
+            if (show_pb) {
+                response += `<p class="pb">${subValues(localeObject.metricsPB, { game, pb: gameObject.personalBest })}</p>`
+            }
+
+            // Returns the response
+            response += '</body></html>'
+            return res.send(response)
+        })
     })
 })
 

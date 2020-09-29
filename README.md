@@ -33,6 +33,37 @@ Query Parameters:
 | private_key | The private key of the API |
 | game | The game data that will be cleared (Optional, defaults to the current game) |
 
+### /getpb
+
+**Description:** Gets the personal best (PB) of the specified game.
+
+Query Parameters:
+| Parameter | Usage |
+|-|-|
+| public_key | The public key for the API. |
+| game | The game that the PB is requested from (Optional, defaults to the current game) |
+
+### /setpb
+
+**Description:** Sets the personal best (PB) of the specified game.
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| private_key | The private key of the API |
+| game | The game that the PB will be set (Optional, defaults to the current game) |
+| pb | The PB value that will be set for the game. |
+
+### /deletepb
+
+**Description:** Removes the personal best (PB) of the specified game.
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| private_key | The private key of the API |
+| game | The game that the PB will be removed (Optional, defaults to the current game) |
+
 ### /getsection
 
 **Description:** Gets the total amount of sections in the game (Without deaths).
@@ -63,7 +94,7 @@ Query Parameters:
 |-|-|
 | private_key | The private key of the API |
 | game | The game for the total amount of sections (Optional, defaults to the current game) |
-| name | The name of the section that would be added |
+| name | The name of the section that would be added (Alias can be used) |
 
 ### /getdeath
 
@@ -74,7 +105,7 @@ Query Parameters:
 |-|-|
 | public_key | The public key of the API |
 | game | The game specified (Optional, defaults to the current game) |
-| section | The name of the section |
+| section | The name of the section (Alias can be used) |
 
 ### /adddeath
 
@@ -85,7 +116,7 @@ Query Parameters:
 |-|-|
 | private_key | The private key of the API |
 | game | The game specified (Optional, defaults to the current game) |
-| section | The name of the section |
+| section | The name of the section (Alias can be used) |
 
 ### /removedeath
 
@@ -96,7 +127,7 @@ Query Parameters:
 |-|-|
 | private_key | The private key of the API |
 | game | The game specified (Optional, defaults to the current game) |
-| section | The name of the section |
+| section | The name of the section (Alias can be used) |
 
 ### /setdeath
 
@@ -107,7 +138,51 @@ Query Parameters:
 |-|-|
 | private_key | The private key of the API |
 | game | The game specified (Optional, defaults to the current game) |
-| content | The section followed by the death count, separated by a space bar, eg. 'Forgotten Crossroads 122' |
+| content | The section followed by the death count, separated by a space bar, eg. 'Forgotten Crossroads 122'. An alias for the section will be read. |
+
+### /getalias
+
+**Description:** Gets the list of alias for a section
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| public_key | The public key of the API |
+| game | The game that the section belongs to (Optional, defaults to the current game) |
+| section | The section that is requested (Alias can be used) |
+
+### /addalias
+
+**Description:** Adds an alias for a section
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| private_key | The private key of the API |
+| game | The game that the section belongs to (Optional, defaults to the current game) |
+| content | The section followed by the alias, separated by a space bar. eg. 'Power Source ps'. An alias for the section can be read. The alias that will be added should not contain a space bar. |
+
+### /removealias
+
+**Description:** Removes an alias for a section
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| private_key | The private key of the API |
+| game | The game that the section belongs to (Optional, defaults to the current game) |
+| content | The section followed by the alias, separated by a space bar. eg. 'Power Source ps'. An alias for the section can be read. The alias should not contain a space bar. |
+
+### /clearalias
+
+**Description:** Clears the alias list for a section
+
+**Query Parameters:**
+| Parameter | Usage |
+|-|-|
+| private_key | The private key of the API |
+| game | The game that the section belongs to (Optional, defaults to the current game) |
+| section | The section that will be cleared (Alias can be used) |
 
 ### /total
 
@@ -129,6 +204,7 @@ Query Parameters:
 | metric_key | The metric key of the API |
 | game | The game specified (Optional, defaults to the current game) |
 | show_total | Whether the total amount would be shown (Optional, defaults to true) |
+| show_pb | Whether the personal best will be shown (Optional, defaults to true) |
 
 ## Installation
 
@@ -201,6 +277,9 @@ Certain attributes in Locale strings can contain templates which would be replac
 | ${game} | The game specified |
 | ${section} | The section specified |
 | ${deaths} | The amount of deaths for that section, or the total deaths in a game |
+| ${pb} | The personal best in a game |
+| ${alias} | The specific alias for a section. |
+| ${port} | The port that the server is running on. |
 
 The availibility of the templates for each attribute can be found in the [.values.json](./locales/.values.json) file in the `locales` directory. For instance, if an attribubte in the JSON file contains `${game}, ${deaths}`, it means that those two template strings will be recognized and replaced.
 

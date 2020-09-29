@@ -9,6 +9,11 @@ const gameSchema = new mongoose.Schema({
     isCurrent: {
         type: Boolean,
         default: true
+    },
+    personalBest: {
+        type: String,
+        default: "",
+        trim: true
     }
 })
 

@@ -19,7 +19,13 @@ const sectionSchema = new mongoose.Schema({
                 throw new Error('Death count should be a positive integer')
             }
         }
-    }
+    },
+    aliasList: [{
+        alias: {
+            type: String,
+            required: true
+        }
+    }]
 }, { timestamps: { created_at: 'created_at' } })
 
 const Section = mongoose.model('Section', sectionSchema)
