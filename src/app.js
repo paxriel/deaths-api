@@ -71,6 +71,15 @@ const deathsRouter = require('./router/deaths')(localeObject, subValues, default
 const port = process.env.PORT || 4001
 const app = express()
 
+app.use((req, res, next) => {
+    for (var key in req.query) {
+        if (/<\/?[a-z][\s\S]*>/i.test(req.query[key])) {
+            return res.send(localeObject[noHTMLTagAllowed])
+        }
+    }
+    next()
+})
+
 // No robots
 app.get('/robots.txt', async (req, res) => {
     return res.send('User-agent: \*\nDisallow: /')
