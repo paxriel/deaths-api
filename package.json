@@ -1,0 +1,22 @@
+{
+  "name": "deaths-api",
+  "version": "1.0.0",
+  "description": "An API for Twitch streamers to manage their deaths.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "env-cmd -f ./config/.env node src/app.js"
+  },
+  "author": "Paxriel <paxriel@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "env-cmd": "^10.1.0"
+  },
+  "dependencies": {
+    "@twurple/auth": "^5.0.18",
+    "@twurple/chat": "^5.0.18",
+    "express": "^4.17.3",
+    "mongodb": "^4.4.0",
+    "mongoose": "^6.2.3"
+  }
+}
