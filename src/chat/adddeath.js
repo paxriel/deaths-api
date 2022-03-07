@@ -1,3 +1,6 @@
 module.exports = {
-    names: ["adddeath", "d+"]
+    names: ["adddeath", "d+"],
+    async execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame) {
+
+    }
 }

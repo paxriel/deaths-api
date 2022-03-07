@@ -189,9 +189,14 @@ async function startBot() {
             command = messageContents[0]
             messageContents.shift()
             
-            // TODO: Create individual files for each command
             if (!commandsObj[command]) return
-            commandsObj[command].execute(twitchChatClient, userIsMod, user, args, localeObject, subValues, defaultError, getCurrentGame)
+            try {
+                await commandsObj[command].execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame)
+            } catch (e) {
+                console.log(localeObject.errorExecutingCommand)
+                console.log(e.stack)
+                return
+            }
         })
         try {
             await twitchChatClient.connect()
@@ -200,7 +205,7 @@ async function startBot() {
             }, cacheDuration * 60 * 1000)
         } catch (e) {
             console.log(localeObject.errorConnectingTwitch)
-            console.log(err.stack)
+            console.log(e.stack)
             return
         }
     })

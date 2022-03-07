@@ -1,3 +1,6 @@
 module.exports = {
-    names: ["removesection", "s-"]
+    names: ["removesection", "deletesection", "s-"],
+    async execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame) {
+
+    }
 }

@@ -1,3 +1,6 @@
 module.exports = {
-    names: ["setpb", "pb+"]
+    names: ["setpb", "pb+"],
+    async execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame) {
+
+    }
 }
