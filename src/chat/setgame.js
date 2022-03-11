@@ -13,9 +13,10 @@ module.exports = {
             return
         }
 
-        Game.findOne({ name: args[0] }, async (e1, game) => {
+        var gameString = args.join(' ')
+        Game.findOne({ name: gameString }, async (e1, game) => {
             if (e1) {
-                console.log(subValues(localeObject.errorFindingDuplicateGame, { game: args[0] }))
+                console.log(subValues(localeObject.errorFindingDuplicateGame, { game: gameString }))
                 console.log(e1.stack)
                 twitchChatClient.say(channel, localeObject.unexpectedError)
                 return
@@ -34,16 +35,16 @@ module.exports = {
     
                 if (!game) {
                     // Creates the new game and adds it
-                    const newGame = new Game({ name: args[0] })
+                    const newGame = new Game({ name: gameString })
                     await newGame.save()
                 } else {
                     // Enables the existing one
                     game.isCurrent = true
                     await game.save()
                 }
-                twitchChatClient.say(channel, subValues(localeObject.currentGameSet, { game: args[0] }))
+                twitchChatClient.say(channel, subValues(localeObject.currentGameSet, { game: gameString }))
             } catch (e3) {
-                console.log(subValues(localeObject.errorSettingCurrentGame, { game: args[0] }))
+                console.log(subValues(localeObject.errorSettingCurrentGame, { game: gameString }))
                 console.log(e3.stack)
                 twitchChatClient.say(channel, localeObject.unexpectedError)
             }

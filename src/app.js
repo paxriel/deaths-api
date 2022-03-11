@@ -185,13 +185,13 @@ async function startBot() {
                 }
             })
 
-            args = message.substring(1).split(' ')
+            args = message.substring(1).trim().split(' ')
             command = messageContents[0]
             messageContents.shift()
             
             if (!commandsObj[command]) return
             try {
-                await commandsObj[command].execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame)
+                await commandsObj[command].execute(channel, twitchChatClient, userIsMod, messageContents, localeObject, subValues, getCurrentGame)
             } catch (e) {
                 console.log(localeObject.errorExecutingCommand)
                 console.log(e.stack)

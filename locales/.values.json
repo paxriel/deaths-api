@@ -32,7 +32,6 @@
     "missingAlias": "${game}, ${section}, ${alias}",
     "missingGame": "${game}",
     "missingSection": "${game}, ${section}",
-    "noPBSpecified": "${game}",
     "personalBestDelete": "${game}",
     "personalBestGet": "${game}, ${pb}",
     "personalBestSet": "${game}, ${pb}",
