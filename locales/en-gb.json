@@ -69,6 +69,7 @@
     "twitchAccessMissing": "The TWITCH_BOT_ACCESS environment variable is missing, exiting",
     "twitchChannelMissing": "The TWITCH_CHANNEL environment variable is missing, exiting",
     "twitchConnected": "Successfully conneted to Twitch chat",
+    "twitchConnectionSuccess": "Successfully connected to Twitch servers",
     "twitchIdMissing": "The TWITCH_CLIENT_ID environment variable is missing, exiting",
     "twitchPermissionDenied": "A Twitch message could not be sent as the rate limit was hit",
     "twitchRefreshMissing": "The TWITCH_BOT_REFRESH environment variable is missing, exiting",
