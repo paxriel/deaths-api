@@ -264,9 +264,7 @@ async function initChatClient(botTokenReference) {
     twitchChatClient.onConnect(() => { console.log(localeObject.twitchConnectionSuccess) })
     twitchChatClient.onNoPermission((channel, message) => { console.log(localeObject.twitchPermissionDenied) })
     try {
-        console.log(1)
         await twitchChatClient.connect()
-        console.log(2)
         await initModsUpdate()
     } catch (e) {
         console.log(localeObject.errorConnectingTwitch)
@@ -312,7 +310,6 @@ async function initModsUpdate() {
         modsList.push(mod.userName)
     })
     console.log(localeObject.modListRetrieved)
-    console.log(modsList)
     setInterval(async () => {
         const tempModsList = await twitchApiClient.moderation.getModerators(channelUser.id)
         modsList = [ process.env.TWITCH_CHANNEL]
