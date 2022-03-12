@@ -41,6 +41,7 @@
     "missingAlias": "The alias specified could not be found.",
     "missingGame": "The game specified could not be found.",
     "missingSection": "The section specified could not be found.",
+    "modListRetrieved": "The moderator list have been successfully retrieved",
     "mongoDBURLMissing": "The connection URL for MongoDB is missing, exiting",
     "noAliasSpecified": "There is no alias specified.",
     "noGameInQuery": "No game is specified in the query.",

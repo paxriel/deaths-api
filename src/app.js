@@ -116,15 +116,12 @@ for (const file of commandFiles) {
 }
 
 async function startBot() {
-    console.log("DEBUG: startBot 1")
     Token.findOne({ id: 0 }, async (err, tokenObj) => {
-        console.log("DEBUG: startBot 2")
         if (err) {
             console.log(err.stack)
             return
         }
 
-        console.log("DEBUG: startBot 3")
         const botTokenReference = {
             accessToken: process.env.TWITCH_BOT_ACCESS,
             refreshToken: process.env.TWITCH_BOT_REFRESH,
@@ -132,7 +129,6 @@ async function startBot() {
             obtainmentTimestamp: 0
         }
         if (tokenObj) {
-            console.log("DEBUG: startBot 4a")
             botTokenObj = tokenObj
             if (process.env.OVERWRITE_BOT_TOKEN) {
                 botTokenObj.accessToken = botTokenReference.accessToken
@@ -152,11 +148,8 @@ async function startBot() {
                 botTokenReference.refreshToken = tokenObj.refreshToken
                 botTokenReference.expiresIn = tokenObj.expiresIn
                 botTokenReference.obtainmentTimestamp = tokenObj.obtainmentTimestamp
-                console.log("DEBUG: startBot 5a")
-                console.log(botTokenReference)
             }
         } else {
-            console.log("DEBUG: startBot 4b")
             botTokenObj = new Token(botTokenReference)
             botTokenObj.id = 0
             try {
@@ -271,7 +264,9 @@ async function initChatClient(botTokenReference) {
     twitchChatClient.onConnect(() => { console.log(localeObject.twitchConnectionSuccess) })
     twitchChatClient.onNoPermission((channel, message) => { console.log(localeObject.twitchPermissionDenied) })
     try {
+        console.log(1)
         await twitchChatClient.connect()
+        console.log(2)
         await initModsUpdate()
     } catch (e) {
         console.log(localeObject.errorConnectingTwitch)
@@ -316,6 +311,8 @@ async function initModsUpdate() {
     tempModsList.data.forEach((mod) => {
         modsList.push(mod.userName)
     })
+    console.log(localeObject.modListRetrieved)
+    console.log(modsList)
     setInterval(async () => {
         const tempModsList = await twitchApiClient.moderation.getModerators(channelUser.id)
         modsList = [ process.env.TWITCH_CHANNEL]
