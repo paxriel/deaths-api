@@ -140,6 +140,7 @@ async function startBot() {
                     await botTokenObj.save()
                 } catch (e) {
                     console.log(localeObject.errorAddingToken)
+                    console.log(1)
                     console.log(e.stack)
                     return
                 }
@@ -156,6 +157,7 @@ async function startBot() {
                 await botTokenObj.save()
             } catch (e) {
                 console.log(localeObject.errorAddingToken)
+                console.log(2)
                 console.log(e.stack)
                 return
             }
@@ -192,6 +194,7 @@ async function initApiClient(botTokenReference) {
                     await channelTokenObj.save()
                 } catch (e) {
                     console.log(localeObject.errorAddingToken)
+                    console.log(3)
                     console.log(e.stack)
                     return
                 }
@@ -208,6 +211,7 @@ async function initApiClient(botTokenReference) {
                 await channelTokenObj.save()
             } catch (e) {
                 console.log(localeObject.errorAddingToken)
+                console.log(4)
                 console.log(e.stack)
                 return
             }
