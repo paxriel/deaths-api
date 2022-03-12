@@ -2,9 +2,9 @@ const mongoose = require('mongoose')
 
 const tokenSchema = new mongoose.Schema({
     id: {
-        // Placeholder to use as sort of a PK
+        // Only 2 possible values: 0 (Bot) and 1 (Broadcaster)
         type: Number,
-        default: 0
+        default: -1
     },
     accessToken: {
         type: String,

@@ -1,4 +1,5 @@
 const express = require('express')
+const got = require('got')
 const router = new express.Router()
 
 const metricKey = process.env.METRIC_KEY
@@ -75,6 +76,25 @@ router.get('/metrics', async (req, res) => {
         })
     })
 })
+
+if (process.env.ENABLE_AUTH_ROUTES) {
+    // Automates the process of getting the auth token
+    router.get('/auth/request', async (req, res) => {
+        return res.redirect(302, `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=http://localhost:4001/auth/handler&response_type=code&scope=chat:read+chat:edit+moderation:read`)
+    })
+
+    router.get('/auth/handler', async (req, res) => {
+        if (!req.query.code) return defaultError(res)
+
+        try {
+            const { body }  = await got.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&code=${req.query.code}&grant_type=authorization_code&redirect_uri=http://localhost:4001/auth/handler`)
+            res.send(body)
+        } catch (err) {
+            console.log(err.stack)
+            defaultError(res)
+        }
+    })
+}
 
 // No robots
 router.get('/robots.txt', async (req, res) => {

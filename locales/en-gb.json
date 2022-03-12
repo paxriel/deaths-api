@@ -51,6 +51,7 @@
     "noPBSpecified": "The PB for this game is not specified.",
     "noSectionSpecified": "There is no section specified.",
     "noSpaceInAlias": "Spaces are not allowed in aliases.",
+    "noUserFound": "The Twitch channel set in the TWITCH_CHANNEL environment variable could not be found",
     "personalBestDelete": "The personal best for ${game} has been deleted.",
     "personalBestGet": "The personal best for ${game} is ${pb}.",
     "personalBestSet": "The personal best for ${game} is now ${pb}.",
@@ -65,10 +66,12 @@
     "serverRunning": "Server is up and running",
     "serverStarted": "Server is up on port ${port}",
     "totalDeaths": "Total deaths for ${game}: ${deaths}",
-    "twitchAccessMissing": "The TWITCH_ACCESS environment variable is missing, exiting",
+    "twitchAccessMissing": "The TWITCH_BOT_ACCESS environment variable is missing, exiting",
     "twitchChannelMissing": "The TWITCH_CHANNEL environment variable is missing, exiting",
+    "twitchConnected": "Successfully conneted to Twitch chat",
     "twitchIdMissing": "The TWITCH_CLIENT_ID environment variable is missing, exiting",
-    "twitchRefreshMissing": "The TWITCH_REFRESH environment variable is missing, exiting",
+    "twitchPermissionDenied": "A Twitch message could not be sent as the rate limit was hit",
+    "twitchRefreshMissing": "The TWITCH_BOT_REFRESH environment variable is missing, exiting",
     "twitchSecretMissing": "The TWITCH_CLIENT_SECRET environment variable is missing, exiting",
     "unexpectedError": "An unexpected error occurred."
 }

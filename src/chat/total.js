@@ -1,6 +1,6 @@
 const Section = require('../db/section')
 var lastCommandTime = 0
-var commandInterval = 60 // seconds
+var commandInterval = 30 // seconds
 
 module.exports = {
     names: ["total", "t"],

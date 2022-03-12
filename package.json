@@ -1,7 +1,7 @@
 {
   "name": "deaths-api",
   "version": "1.0.0",
-  "description": "An API for Twitch streamers to manage their deaths.",
+  "description": "An Twitch bot for Twitch streamers to record their in-game deaths.",
   "main": "app.js",
   "scripts": {
     "start": "node src/app.js",
@@ -13,9 +13,11 @@
     "env-cmd": "^10.1.0"
   },
   "dependencies": {
+    "@twurple/api": "^5.0.18",
     "@twurple/auth": "^5.0.18",
     "@twurple/chat": "^5.0.18",
     "express": "^4.17.3",
+    "got": "^11.8.3",
     "mongodb": "^4.4.0",
     "mongoose": "^6.2.3"
   }

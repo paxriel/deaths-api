@@ -2,7 +2,81 @@
 
 Deaths API is a website for streamers to host to record in-game death counts. This is intended to be used with one/multiple games that has sections and some sort of death functionality. It can store the deaths data of multiple games at a time in an external database, and contains a metrics page that you can put as a Browser Source in your OBS as well. Each instance of the application is intended to run only for one streamer.
 
+## Structure
+
+Each game will have multiple sections, and each section will have its own death counts. In addition, to allow for easier entry of sections, sections can have aliases that can be used in place of the section names. An example of the structure is shown below:
+
+Game: **Celeste (Farewell)**
+
+| Section | Deaths | Aliases |
+|-|-|-|
+| Remembered | 123 | r, 1 |
+| Event Horizon | 471 | eh, 2 |
+| Determination | 1966 | d, 3 |
+| Stubbornness | 2079 | s, 4 |
+| Reconciliation | 748 | r, 5 |
+| Farewell | 365 | f, 6 |
+
+Game: **Hollow Knight**
+
+| Section | Deaths | Aliases |
+|-|-|-|
+| P1 | 118 | |
+| P2 | 201 | |
+| P3 | 433 | |
+| P4 | 507 | |
+| Extra | 1923 | whywontyoudieyoustupidpieceof |
+
+Do note that all games, sections and aliases are case sensitive.
+
 ## Commands List
+
+All get commands can be accessed by anyone and are rate limited, whereas the remaining commands can only be accessed by the channel moderators but have no rate limit.
+
+### Game Commands
+
+| Command | Arguments | Function | Requires selected game? | Example |
+|-|-|-|-|-|
+| !getgame / !g / !game | - | Gets the current game that is selected | Y | !g |
+| !removegame / !deletegame | The game that should be deleted (optional) | Deletes either the game that is provided or the game that is selected | N | !deletegame Hollow Knight |
+| !setgame | The game that should be selected | Sets the game provided in the argument as the selected game | N | !setGame Hollow Knight |
+
+### Section Commands
+
+| Command | Arguments | Function | Requires selected game? | Example |
+|-|-|-|-|-|
+| !addsection / !s+ | The name of the section | Adds the section provided by the argument to the selected game | Y | !s+ Power Source |
+| !getsection / !s | - | Gets all sections in the selected game | Y | !s |
+| !removesection / !deletesection / !s- | The name of the section | Removes the section provided by the argument from the selected game | Y | !s- Power Source |
+
+### Personal Best (PB) Commands
+
+| Command | Arguments | Function | Requires selected game? | Example |
+|-|-|-|-|-|
+| !getpb / !pb | - | Gets the personal best for the current game | Y | !pb |
+| !removepb / !deletepb / !pb- | - | Removes the personal best for the current game | Y | !pb- |
+| !setpb / !pb+ | The personal best of the selected game | Sets the personal best for the selected game to the argument value | Y | !pb+ Power Source end part |
+
+### Deaths Commands
+
+| Command | Arguments | Function | Requires selected game? | Example |
+|-|-|-|-|-|
+| !adddeath / !d+ | The section / alias that the death would be added to | Adds a death to the section provided in the argument | Y | !d+ Power Source |
+| !getdeath / !d | The section / alias that the deaths data should be retrieved from | Gets the number of deaths present in the selected section | Y | !d Power Source |
+| !removedeath / !deletedeath / !d- | The section / alias that the death would be removed from | Removes a death from the section provided in the argument | Y | !d- Power Source |
+| !setdeath / !ds | The section / alias that the death would be added to followed by the death count | Sets the death count of the section to the specified value | Y | !ds Power Source 112 |
+| !total / !t | The game that the total deaths should be retrieved from (optional) | Gets the total deaths of the game that is provided or the game that is selected | N | !t Celeste |
+
+### Alias Commands
+
+| Command | Arguments | Function | Requires selected game? | Example |
+|-|-|-|-|-|
+| !addalias / !a+ | The name of the section followed by the alias (eg. 'Power Source ps') | Allows for the alias entered to be used in place of the section. | Y | !a+ Power Source ps |
+| !clearalias / !ac | The name of the section / One of the aliases of the section | Clears all aliases that are previously added for that section. | Y | !ac Power Source |
+| !getalias / !a | The name of the section / One of the aliases of the section | Shows all aliases that are in use for that section. | Y | !a Power Source |
+| !removealias / !deletealias / !a- | The name of the section followed by the alias (eg. 'Power Source ps') | Removes the alias entered from the section. | Y | !a- Power Source ps |
+
+Note: Aliases cannot have spaces.
 
 ## Installation
 
@@ -10,23 +84,30 @@ Deaths API is a website for streamers to host to record in-game death counts. Th
 
 * Basic understanding of the command line
 * A location to deploy the program, preferably Heroku ([Account Creation](https://signup.heroku.com/node), [CLI download](https://devcenter.heroku.com/articles/heroku-cli#download-and-install) and [CLI login](https://devcenter.heroku.com/articles/heroku-cli#getting-started))
-* [Git](https://git-scm.com/downloads) (Only if you are deploying using Heroku)
-* [Node.JS](https://nodejs.org/en/download/)
-* [NPM](https://www.npmjs.com/get-npm) (It should be included within Node.JS)
+* [Git](https://git-scm.com/downloads)
+* [Node.JS](https://nodejs.org/en/download/) and [NPM](https://www.npmjs.com/get-npm)
 * A [MongoDB](https://docs.atlas.mongodb.com/getting-started/) database connection URL
+
+### Set up OAuth
+
+TODO: Complete
 
 ### Environment Variables
 
-* METRIC_KEY: The key to view the metrics page. This key can be provided to your viewers for them to view the current metrics in a browser. However, doing so risks having your server being DDOSed by accident due to the large amount of requests received from the viewers. Hence, it is **not recommended** to publicize this key.
+* LOCALE: The locale file to be used. Defaults to en-gb.
+* METRIC_KEY: The key to view the metrics page. This key can be provided to your viewers for them to view the current metrics in a browser. However, doing so risks having your server and / or database being overloaded due to the large amount of requests received from the viewers. Hence, it is **not recommended** to publicize this key.
 * MONGODB_URL: The URL to access your [MongoDB database](https://docs.atlas.mongodb.com/getting-started/).
 * PORT: The port that the server will be deployed on. (Optional, defaults to 4001)
 * REFRESH_DURATION: The duration that the metrics page refreshes. (Optional, defaults to 15)
 * LOCALE: The language file used for the messages. (Optional, defaults to en-gb)
-* TWITCH_ACCESS:
-* TWITCH_REFRESH:
+* TWITCH_BOT_ACCESS:
+* TWITCH_BOT_REFRESH:
+* TWITCH_CHANNEL_ACCESS:
+* TWITCH_CHANNEL_TOKEN:
 * TWITCH_CHANNEL:
-* TWITCH_CHANNEL_ID:
-* TWITCH_CHANNEL_SECRET:
+* TWITCH_CLIENT_ID:
+* TWITCH_CLIENT_SECRET:
+* TWITCH_CACHE_DURATION: The duration to cache the Twitch moderators of your channel for.
 
 ### Deploying Locally
 

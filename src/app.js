@@ -1,6 +1,7 @@
 // Author: Paxriel (https://twitch.tv/paxriel)
-const { ChatClient } = require('@twurple/chat');
-const { RefreshingAuthProvider } = require('@twurple/auth');
+const { ApiClient } = require('@twurple/api')
+const { ChatClient } = require('@twurple/chat')
+const { RefreshingAuthProvider } = require('@twurple/auth')
 const express = require('express')
 const fs = require('fs')
 var localeObject = checkLocale()
@@ -30,12 +31,6 @@ function checkEnvVars() {
         process.exit(21)
     } else if (!process.env.TWITCH_CHANNEL) {
         console.log(localeObject.twitchChannelMissing)
-        process.exit(21)
-    } else if (!process.env.TWITCH_ACCESS) {
-        console.log(localeObject.twitchAccessMissing)
-        process.exit(21)
-    } else if (!process.env.TWITCH_REFRESH) {
-        console.log(localeObject.twitchRefreshMissing)
         process.exit(21)
     } else if (!process.env.TWITCH_CLIENT_ID) {
         console.log(localeObject.twitchIdMissing)
@@ -110,39 +105,55 @@ app.listen(port, () => {
 /* TWITCH BOT SECTION */
 
 // Set up commands
+var twitchApiClient, twitchChatClient, botTokenObj, channelTokenObj
 var commandsObj = {}
-const commandFiles = fs.readdirSync('./chat').filter(file => file.endsWith('.js'))
+var modsList = []
+
+const commandFiles = fs.readdirSync('./src/chat').filter(file => file.endsWith('.js'))
 for (const file of commandFiles) {
 	const command = require(`./chat/${file}`)
     command.names.forEach((commandName) => commandsObj[commandName] = command)
 }
 
 async function startBot() {
-    var twitchAuthProvider, twitchChatClient
-    const tokenRefObj = {
-        accessToken: process.env.TWITCH_ACCESS,
-	    refreshToken: process.env.TWITCH_REFRESH,
-	    expiresIn: 0,
-	    obtainmentTimestamp: 0
-    }
     Token.findOne({ id: 0 }, async (err, tokenObj) => {
         if (err) {
-            console.log(localeObject.errorCheckingDuplicateSections)
             console.log(err.stack)
             return
         }
 
-        var tokenMongooseObj
+        const botTokenReference = {
+            accessToken: process.env.TWITCH_BOT_ACCESS,
+            refreshToken: process.env.TWITCH_BOT_REFRESH,
+            expiresIn: 0,
+            obtainmentTimestamp: 0
+        }
         if (tokenObj) {
-            tokenMongooseObj = tokenObj
-            tokenRefObj.accessToken = tokenObj.accessToken
-            tokenRefObj.refreshToken = tokenObj.refreshToken
-            tokenRefObj.expiresIn = tokenObj.expiresIn
-            tokenRefObj.obtainmentTimestamp = tokenObj.obtainmentTimestamp
+            botTokenObj = tokenObj
+            if (process.env.OVERWRITE_BOT_TOKEN) {
+                botTokenObj.accessToken = botTokenReference.accessToken
+                botTokenObj.refreshToken = botTokenReference.refreshToken
+                botTokenObj.expiresIn = botTokenReference.expiresIn
+                botTokenObj.obtainmentTimestamp = botTokenReference.obtainmentTimestamp
+
+                try {
+                    await botTokenObj.save()
+                } catch (e) {
+                    console.log(localeObject.errorAddingToken)
+                    console.log(e.stack)
+                    return
+                }
+            } else {
+                botTokenReference.accessToken = tokenObj.accessToken
+                botTokenReference.refreshToken = tokenObj.refreshToken
+                botTokenReference.expiresIn = tokenObj.expiresIn
+                botTokenReference.obtainmentTimestamp = tokenObj.obtainmentTimestamp
+            }
         } else {
-            tokenMongooseObj = new Token(tokenObj)
+            botTokenObj = new Token(botTokenReference)
+            botTokenObj.id = 0
             try {
-                await tokenMongooseObj.save()
+                await botTokenObj.save()
             } catch (e) {
                 console.log(localeObject.errorAddingToken)
                 console.log(e.stack)
@@ -150,65 +161,160 @@ async function startBot() {
             }
         }
 
-        twitchAuthProvider = new RefreshingAuthProvider({ 
-            clientId: process.env.TWITCH_CLIENT_ID, 
-            clientSecret: process.env.TWITCH_CLIENT_SECRET,
-            onRefresh: async newTokenData => {
-                // tokenRefObj only used at start, no need for constant update
-                tokenMongooseObj.accessToken = newTokenData.accessToken
-                tokenMongooseObj.refreshToken = newTokenData.refreshToken
-                tokenMongooseObj.expiresIn = newTokenData.expiresIn
-                tokenMongooseObj.obtainmentTimestamp = newTokenData.obtainmentTimestamp
-                try {
-                    await tokenMongooseObj.save()
-                } catch (e) {
-                    console.log(localeObject.errorAddingToken)
-                    console.log(`accessToken: ${tokenMongooseObj.accessToken}\nrefreshToken: ${tokenMongooseObj.refreshToken}`)
-                    console.log(e.stack)
-                }
-            }
-        }, tokenRefObj)
-
-        // Cache the mod list and update it at regular intervals (in mins)
-        const cacheDuration = process.env.TWITCH_CACHE ? parseInt(process.env.TWITCH_CACHE) : 10
-        var modsList = []
-
-        // Set up the listener for chat events
-        twitchChatClient = new ChatClient({ twitchAuthProvider, channels: [process.env.TWITCH_CHANNEL] })
-        twitchChatClient.onMessage(async (channel, user, message, msg) => {
-            if (!/^![a-zA-Z+-]*($| .*$)/.test(message)) return
-
-            var userIsMod = false
-            modsList.forEach((mod) => {
-                if (mod === user) {
-                    userIsMod = true
-                }
-            })
-
-            args = message.substring(1).trim().split(' ')
-            command = messageContents[0]
-            messageContents.shift()
-            
-            if (!commandsObj[command]) return
-            try {
-                await commandsObj[command].execute(channel, twitchChatClient, userIsMod, messageContents, localeObject, subValues, getCurrentGame)
-            } catch (e) {
-                console.log(localeObject.errorExecutingCommand)
-                console.log(e.stack)
-                return
-            }
-        })
-        try {
-            await twitchChatClient.connect()
-            setInterval(() => {
-                modsList = await twitchChatClient.getMods(process.env.TWITCH_CHANNEL)
-            }, cacheDuration * 60 * 1000)
-        } catch (e) {
-            console.log(localeObject.errorConnectingTwitch)
-            console.log(e.stack)
-            return
-        }
+        await initApiClient(botTokenReference)
     })
 }
 
-startBot()
+async function initApiClient(botTokenReference) {
+    Token.findOne({ id: 1 }, async (err, tokenObj) => {
+        if (err) {
+            console.log(err.stack)
+            return
+        }
+
+        // Yes this code can definitely be refactored, but since only 2 tokens are needed,
+        // this is the easiest way to do this for now
+        const channelTokenReference = {
+            accessToken: process.env.TWITCH_CHANNEL_ACCESS,
+            refreshToken: process.env.TWITCH_CHANNEL_REFRESH,
+            expiresIn: 0,
+            obtainmentTimestamp: 0
+        }
+        if (tokenObj) {
+            channelTokenObj = tokenObj
+            if (process.env.OVERWRITE_CHANNEL_TOKEN) {
+                channelTokenObj.accessToken = channelTokenReference.accessToken
+                channelTokenObj.refreshToken = channelTokenReference.refreshToken
+                channelTokenObj.expiresIn = channelTokenReference.expiresIn
+                channelTokenObj.obtainmentTimestamp = channelTokenReference.obtainmentTimestamp
+
+                try {
+                    await channelTokenObj.save()
+                } catch (e) {
+                    console.log(localeObject.errorAddingToken)
+                    console.log(e.stack)
+                    return
+                }
+            } else {
+                channelTokenReference.accessToken = tokenObj.accessToken
+                channelTokenReference.refreshToken = tokenObj.refreshToken
+                channelTokenReference.expiresIn = tokenObj.expiresIn
+                channelTokenReference.obtainmentTimestamp = tokenObj.obtainmentTimestamp
+            }
+        } else {
+            channelTokenObj = new Token(channelTokenReference)
+            channelTokenObj.id = 1
+            try {
+                await channelTokenObj.save()
+            } catch (e) {
+                console.log(localeObject.errorAddingToken)
+                console.log(e.stack)
+                return
+            }
+        }
+
+        var channelAuthProvider = new RefreshingAuthProvider({ 
+            clientId: process.env.TWITCH_CLIENT_ID, 
+            clientSecret: process.env.TWITCH_CLIENT_SECRET,
+            onRefresh: async newTokenData => {
+                // channelTokenReference only used at start, no need for constant update
+                channelTokenObj.accessToken = newTokenData.accessToken
+                channelTokenObj.refreshToken = newTokenData.refreshToken
+                channelTokenObj.expiresIn = newTokenData.expiresIn
+                channelTokenObj.obtainmentTimestamp = newTokenData.obtainmentTimestamp
+                try {
+                    await channelTokenObj.save()
+                } catch (e) {
+                    console.log(localeObject.errorAddingToken)
+                    console.log(`accessToken: ${channelTokenObj.accessToken}\nrefreshToken: ${channelTokenObj.refreshToken}`)
+                    console.log(e.stack)
+                }
+            }
+        }, channelTokenReference)
+        twitchApiClient = new ApiClient({ authProvider: channelAuthProvider })
+        await initModsUpdate()
+        await initChatClient(botTokenReference)
+    })
+}
+
+async function initChatClient(botTokenReference) {
+    // Auth provider for chat
+    var botAuthProvider = new RefreshingAuthProvider({ 
+        clientId: process.env.TWITCH_CLIENT_ID, 
+        clientSecret: process.env.TWITCH_CLIENT_SECRET,
+        onRefresh: async newTokenData => {
+            // botTokenReference only used at start, no need for constant update
+            botTokenObj.accessToken = newTokenData.accessToken
+            botTokenObj.refreshToken = newTokenData.refreshToken
+            botTokenObj.expiresIn = newTokenData.expiresIn
+            botTokenObj.obtainmentTimestamp = newTokenData.obtainmentTimestamp
+            try {
+                await botTokenObj.save()
+            } catch (e) {
+                console.log(localeObject.errorAddingToken)
+                console.log(`accessToken: ${botTokenObj.accessToken}\nrefreshToken: ${botTokenObj.refreshToken}`)
+                console.log(e.stack)
+            }
+        }
+    }, botTokenReference)
+
+    // Set up the listener for chat events
+    twitchChatClient = new ChatClient({ authProvider: botAuthProvider, channels: [process.env.TWITCH_CHANNEL] })
+    twitchChatClient.onMessage(handleMessage)
+    twitchChatClient.onNoPermission((channel, message) => { console.log(localeObject.twitchPermissionDenied) })
+    try {
+        await twitchChatClient.connect()
+        await initModsUpdate()
+    } catch (e) {
+        console.log(localeObject.errorConnectingTwitch)
+        console.log(e.stack)
+        return
+    }
+}
+
+async function handleMessage(channel, user, message, msg) {
+    if (!/^![a-zA-Z+-]*($| .*$)/.test(message)) return
+
+    var userIsMod = false
+    modsList.forEach((mod) => {
+        if (mod === user) {
+            userIsMod = true
+        }
+    })
+
+    var messageContents = message.substring(1).trim().split(' ')
+    const command = messageContents[0].toLowerCase()
+    messageContents.shift()
+    
+    if (!commandsObj[command]) return
+    try {
+        await commandsObj[command].execute(channel, twitchChatClient, userIsMod, messageContents, localeObject, subValues, getCurrentGame)
+    } catch (e) {
+        console.log(localeObject.errorExecutingCommand)
+        console.log(e.stack)
+        return
+    }
+}
+
+async function initModsUpdate() {
+    const channelUser = await twitchApiClient.users.getUserByName(process.env.TWITCH_CHANNEL)
+    if (!channelUser) {
+        console.log(localeObject.noUserFound)
+        return
+    }
+    const cacheDuration = process.env.TWITCH_CACHE ? parseInt(process.env.TWITCH_CACHE) : 10
+    const tempModsList = await twitchApiClient.moderation.getModerators(channelUser.id)
+    modsList = [ process.env.TWITCH_CHANNEL ]
+    tempModsList.data.forEach((mod) => {
+        modsList.push(mod.userName)
+    })
+    setInterval(async () => {
+        const tempModsList = await twitchApiClient.moderation.getModerators(channelUser.id)
+        modsList = [ process.env.TWITCH_CHANNEL]
+        tempModsList.data.forEach((mod) => {
+            modsList.push(mod.userName)
+        })
+    }, cacheDuration * 60 * 1000)
+}
+
+if (!process.env.ENABLE_AUTH_ROUTES) startBot()

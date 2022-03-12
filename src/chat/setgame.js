@@ -8,9 +8,6 @@ module.exports = {
         if (args.length == 0) {
             twitchChatClient.say(channel, localeObject.noGameInQuery)
             return
-        } else if (args.length != 1) {
-            twitchChatClient.say(channel, localeObject.invalidParamCount)
-            return
         }
 
         var gameString = args.join(' ')
