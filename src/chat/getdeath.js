@@ -1,6 +1,6 @@
 const Section = require('../db/section')
 var lastCommandTime = 0
-var commandInterval = 10 // seconds
+var commandInterval = 5 // seconds
 
 module.exports = {
     names: ["getdeath", "d"],
