@@ -5,7 +5,7 @@ var commandInterval = 30 // seconds
 module.exports = {
     names: ["total", "t"],
     async execute(channel, twitchChatClient, userIsMod, args, localeObject, subValues, getCurrentGame) {
-        const currentTime = new Date().getUTCSeconds()
+        const currentTime = Math.floor(Date.now() / 1000)
         if (currentTime - lastCommandTime < commandInterval) return
         lastCommandTime = currentTime
 
